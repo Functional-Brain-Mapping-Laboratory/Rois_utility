@@ -1,0 +1,5 @@
+PyQt5
+nibabel
+numpy
+pycartool
+scikit-learn

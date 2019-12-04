@@ -70,7 +70,18 @@ def create_region_of_interest(mri, spi, data_lut, palette, fname_spi=None):
     for coord, indice in zip(good_coord.astype(int), good_labels):
         sources_mri[coord[0], coord[1], coord[2]] = int(indice)
     img = nib.Nifti1Image(sources_mri.astype('uint16'), mri.affine)
-    return(rois, img)
+
+    # Create rois_spi
+    rois_spi_names = list()
+    rois_spi_coords = list()
+    for name, indexes in zip(rois.names, rois.groups_of_indexes):
+        center_of_mass = np.mean(coordinates[indexes], axis=0)
+        rois_spi_coords.append(center_of_mass)
+        rois_spi_names.append(name)
+    rois_spi = pycartool.source_space.SourceSpace(rois_spi_names,
+                                                  np.array(rois_spi_coords),
+                                                  subject=None, filename=None)
+    return(rois, img, rois_spi)
 
 
 def save_rois(rois, fname):

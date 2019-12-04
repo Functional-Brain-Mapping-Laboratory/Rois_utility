@@ -13,7 +13,7 @@ In order to keep a smooth inverse solution, Cartool often positions solution poi
 
 First, the toolbox trains a KNN classifier using the MRI's voxels' positions and labels (excluding the unknown label [voxel data =0]).
 Then it affect a label to each sources ( vote among the 5 closest voxels).  Finally, sources which don't have at least 5 voxels data in a 5 voxels radius around them are rejected.
-Results are saved as a .rois file for further analysis. A Nifti file containing the solution points is also create for quality check. (It can be open in software such as freeview along with the lookUp table and other MRIs files.)
+Results are saved as a .rois file for further analysis. A spi file containing the center of mass of each rois is also saved, as well as a Nifti file containing the solution points. (It can be open in software such as freeview along with the lookUp table and other MRIs files for quality check.)
 
 # Installation
 

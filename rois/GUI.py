@@ -142,13 +142,15 @@ class RoisToolbox(QDialog):
 
             fname_rois = base_name + '.rois'
             fname_source_mri = base_name + '.nii'
+            fname_rois_spi = base_name + '_rois.spi'
             QApplication.setOverrideCursor(Qt.WaitCursor)
-            rois, img = create_region_of_interest(self.atlas,
-                                                  self.spi,
-                                                  self.data_lut,
-                                                  self.palette)
+            rois, img, rois_spi = create_region_of_interest(self.atlas,
+                                                            self.spi,
+                                                            self.data_lut,
+                                                            self.palette)
             save_rois(rois, fname_rois)
             img.to_filename(fname_source_mri)
+            rois_spi.save(fname_rois_spi)
             QApplication.restoreOverrideCursor()
             self.QMessageBox_finnish = QMessageBox()
             self.QMessageBox_finnish.setWindowTitle("Finished")

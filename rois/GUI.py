@@ -1,6 +1,7 @@
 
 import sys
 import os
+import numpy as np
 
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QGridLayout, QLabel,
                              QSpinBox, QComboBox, QDialogButtonBox, QCheckBox,
@@ -10,7 +11,7 @@ from PyQt5.QtCore import Qt, pyqtSlot
 import nibabel as nib
 import pycartool
 
-from .utils import open_lut, create_region_of_interest, save_rois
+from .utils import open_lut, create_region_of_interest, save_rois, open_text
 
 
 class RoisToolbox(QDialog):
@@ -23,7 +24,7 @@ class RoisToolbox(QDialog):
         self.spi = None
         self.atlas = None
         self.data_lut = None
-        self.palette = None
+        self.keep_rois = None
         self.output_directory = None
         # SPI file
         grid.addWidget(QLabel('Source space:'), 0, 0)
@@ -46,20 +47,27 @@ class RoisToolbox(QDialog):
         self.QPushButton_lut = QPushButton('Open')
         self.QPushButton_lut.clicked.connect(self.open_lut)
         grid.addWidget(self.QPushButton_lut, 2, 3)
+        # keep rois
+        grid.addWidget(QLabel('Keep Rois:'), 3, 0)
+        self.QLineEdit_keep_rois = QLineEdit()
+        grid.addWidget(self.QLineEdit_keep_rois, 3, 1)
+        self.QPushButton_keep_rois = QPushButton('Open')
+        self.QPushButton_keep_rois.clicked.connect(self.open_txt)
+        grid.addWidget(self.QPushButton_keep_rois, 3, 3)
         # outputdir
-        grid.addWidget(QLabel('Output directory:'), 3, 0)
+        grid.addWidget(QLabel('Output directory:'), 4, 0)
         self.QLineEdit_output_dir = QLineEdit()
         self.output_directory = os.getcwd()
         self.QLineEdit_output_dir.setText(self.output_directory)
-        grid.addWidget(self.QLineEdit_output_dir, 3, 1)
+        grid.addWidget(self.QLineEdit_output_dir, 4, 1)
         self.QPushButton_open_output_dir = QPushButton('Open')
         self.QPushButton_open_output_dir.clicked.connect(
                                                    self.open_output_directory)
-        grid.addWidget(self.QPushButton_open_output_dir, 3, 3)
+        grid.addWidget(self.QPushButton_open_output_dir, 4, 3)
         # run
         self.buttonbox = QDialogButtonBox(QDialogButtonBox.Ok |
                                           QDialogButtonBox.Cancel)
-        grid.addWidget(self.buttonbox, 4, 1, 1, 4)
+        grid.addWidget(self.buttonbox, 5, 1, 1, 4)
         self.buttonbox.accepted.connect(self.run)
         self.buttonbox.rejected.connect(self.reject)
         self.buttonbox.setEnabled(False)
@@ -71,8 +79,35 @@ class RoisToolbox(QDialog):
                                    self.output_directory]):
             self.buttonbox.setEnabled(False)
         else:
-            self.buttonbox.setEnabled(True)
+            self.buttonbox.setEnabled(True)        
+        if self.keep_rois is not None and self.data_lut is not None:
+            roi_not_in_LUT = list()
+            for roi_name in self.keep_rois:
+                if roi_name not in self.data_lut['name']:
+                    roi_not_in_LUT.append(roi_name)
+            if len(roi_not_in_LUT) > 0:
+                QApplication.restoreOverrideCursor()
+                self.QErrorMessage = QErrorMessage()
+                self.QErrorMessage.showMessage(f'{roi_not_in_LUT} from keep file are not in LUT file')
+                # can't compute
+                self.buttonbox.setEnabled(False)
 
+
+    def open_txt(self):
+        filter = "txt(*.txt)"
+        fname, _ = QFileDialog.getOpenFileName(self,
+                                               'Open keep_rois',
+                                               filter=filter)
+        if fname:
+            self.keep_rois_fname = fname
+            with open(self.fname_spi) as f:
+                self.keep_rois = open_text(self.keep_rois_fname)
+        else:
+            self.keep_rois_fname = None
+        self.QLineEdit_keep_rois.setText(self.keep_rois_fname)
+        self.data_changed()
+        return()      
+        
     def open_spi(self):
         filter = "spi(*.spi)"
         fname, _ = QFileDialog.getOpenFileName(self,
@@ -147,7 +182,7 @@ class RoisToolbox(QDialog):
             rois, img, rois_spi = create_region_of_interest(self.atlas,
                                                             self.spi,
                                                             self.data_lut,
-                                                            self.palette)
+                                                            self.keep_rois)
             save_rois(rois, fname_rois)
             img.to_filename(fname_source_mri)
             rois_spi.save(fname_rois_spi)

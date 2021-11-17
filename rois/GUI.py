@@ -21,6 +21,9 @@ class RoisToolbox(QDialog):
         vbox = QVBoxLayout(self)
         grid = QGridLayout()
         # Init
+        self.fname_spi = None
+        self.fname_lut = None
+        self.fname_atlas = None
         self.spi = None
         self.atlas = None
         self.data_lut = None

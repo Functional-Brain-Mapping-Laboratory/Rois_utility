@@ -1,9 +1,10 @@
 import sys
+
 from PyQt5.QtWidgets import QApplication
-from .GUI import RoisToolbox
 
+from .gui import RoisToolbox
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     modern = False
     app = QApplication(sys.argv)
     RoisToolbox = RoisToolbox(QApplication=app)

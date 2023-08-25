@@ -1,22 +1,24 @@
-import os
-
-import numpy as np
 import nibabel as nib
-from sklearn.neighbors import KNeighborsClassifier
+import numpy as np
 import pycartool
+from sklearn.neighbors import KNeighborsClassifier
 
 
 def open_lut(fname):
     # open lut
-    dtype = [('id', '<i8'), ('name', 'U47'),
-             ('R', '<i8'), ('G', '<i8'), ('B', '<i8'), ('A', '<i8')]
+    dtype = [
+        ("id", "<i8"),
+        ("name", "U47"),
+        ("R", "<i8"),
+        ("G", "<i8"),
+        ("B", "<i8"),
+        ("A", "<i8"),
+    ]
     data_lut = np.genfromtxt(fname, dtype=dtype)
-    palette = np.zeros((data_lut['id'][-1] + 1, 3))
-    for k, id in enumerate(data_lut['id']):
-        palette[id] = [data_lut['R'][k],
-                       data_lut['G'][k],
-                       data_lut['B'][k]]
-    return(data_lut, palette)
+    palette = np.zeros((data_lut["id"][-1] + 1, 3))
+    for k, id in enumerate(data_lut["id"]):
+        palette[id] = [data_lut["R"][k], data_lut["G"][k], data_lut["B"][k]]
+    return (data_lut, palette)
 
 
 def create_region_of_interest(mri, spi, data_lut, palette, fname_spi=None):
@@ -27,9 +29,9 @@ def create_region_of_interest(mri, spi, data_lut, palette, fname_spi=None):
         mri_data = np.round(mri.get_fdata()[:, :, :, 0]).astype(int)
     # Project coordinates to MRI space
     coordinates = spi.coordinates
-    origin = np.array([mri.header['qoffset_x'],
-                       mri.header['qoffset_y'],
-                       mri.header['qoffset_z']])
+    origin = np.array(
+        [mri.header["qoffset_x"], mri.header["qoffset_y"], mri.header["qoffset_z"]]
+    )
     s_coordinates = np.array([np.array(c) - origin for c in coordinates.tolist()])
     sources_indices = np.arange(0, len(coordinates))
     # Generate MRI data
@@ -39,10 +41,10 @@ def create_region_of_interest(mri, spi, data_lut, palette, fname_spi=None):
         for j in range(0, mri_data.shape[1]):
             for k in range(0, mri_data.shape[2]):
                 if mri_data[i, j, k] > 0:
-                    training_pos.append([i+0.5, j+0.5, k+0.5])
+                    training_pos.append([i + 0.5, j + 0.5, k + 0.5])
                     training_labels.append(mri_data[i, j, k])
     # train classifier
-    knn = KNeighborsClassifier(n_neighbors=5, metric='euclidean')
+    knn = KNeighborsClassifier(n_neighbors=5, metric="euclidean")
     knn.fit(np.array(training_pos), np.array(training_labels).astype(int))
     # predict source labels
     source_labels = knn.predict(s_coordinates)
@@ -57,17 +59,17 @@ def create_region_of_interest(mri, spi, data_lut, palette, fname_spi=None):
     names = list()
     groups_of_indices = list()
     for label in np.unique(good_labels):
-        names.append(data_lut['name'][np.where(data_lut['id'] == label)])
+        names.append(data_lut["name"][np.where(data_lut["id"] == label)])
         groups_of_indices.append(list(good_indices[np.where(good_labels == label)]))
 
-    rois = pycartool.regions_of_interest.RegionsOfInterest(names,
-                                                           groups_of_indices,
-                                                           source_space=spi)
+    rois = pycartool.rois.RegionsOfInterest(
+        names, groups_of_indices, source_space=spi
+    )
 
     sources_mri = np.zeros(mri_data.shape)
     for coord, indice in zip(good_coord.astype(int), good_labels):
         sources_mri[coord[0], coord[1], coord[2]] = int(indice)
-    img = nib.Nifti1Image(sources_mri.astype('uint16'), mri.affine)
+    img = nib.Nifti1Image(sources_mri.astype("uint16"), mri.affine)
 
     # Create rois_spi
     rois_spi_names = list()
@@ -76,20 +78,20 @@ def create_region_of_interest(mri, spi, data_lut, palette, fname_spi=None):
         center_of_mass = np.mean(coordinates[indexes], axis=0)
         rois_spi_coords.append(center_of_mass)
         rois_spi_names.append(name)
-    rois_spi = pycartool.source_space.SourceSpace(rois_spi_names,
-                                                  np.array(rois_spi_coords),
-                                                  subject=None, filename=None)
-    return(rois, img, rois_spi)
+    rois_spi = pycartool.spi.SourceSpace(
+        rois_spi_names, np.array(rois_spi_coords), subject=None, filename=None
+    )
+    return (rois, img, rois_spi)
 
 
 def save_rois(rois, fname):
     # Save
-    with open(fname, 'w') as the_file:
-        the_file.write('RO01' + '\n')
-        the_file.write(str((rois.source_space.n_sources)) + '\n')
-        the_file.write(str(len(rois.groups_of_indexes)) + '\n')
+    with open(fname, "w") as the_file:
+        the_file.write("RO01" + "\n")
+        the_file.write(str((rois.source_space.n_sources)) + "\n")
+        the_file.write(str(len(rois.groups_of_indexes)) + "\n")
         for i in range(0, len(rois.groups_of_indexes)):
-            the_file.write(rois.names[i][0] + '\n')
+            the_file.write(rois.names[i][0] + "\n")
             for ind in rois.groups_of_indexes[i]:
-                the_file.write(str(ind + 1) + ' ')
-            the_file.write('\n')
+                the_file.write(str(ind + 1) + " ")
+            the_file.write("\n")

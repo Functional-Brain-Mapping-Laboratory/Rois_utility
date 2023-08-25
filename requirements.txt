@@ -1,5 +1,5 @@
 PyQt5
 nibabel
 numpy
-pycartool
+pycrostates @ git+https://github.com/Functional-Brain-Mapping-Laboratory/PyCartool@0ce778bf6a8c8cb937ca7d50a785e378bb58e36a
 scikit-learn

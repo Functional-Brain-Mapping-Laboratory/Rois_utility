@@ -1,4 +1,5 @@
 import os
+import logging
 
 from PyQt5.QtWidgets import (
     QDialog,
@@ -161,5 +162,5 @@ class RoisToolbox(QDialog):
         except Exception as e:
             QApplication.restoreOverrideCursor()
             self.QErrorMessage = QErrorMessage()
-            print(e)
+            logging.exception("error")
             self.QErrorMessage.showMessage(str(e))

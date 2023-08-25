@@ -161,4 +161,5 @@ class RoisToolbox(QDialog):
         except Exception as e:
             QApplication.restoreOverrideCursor()
             self.QErrorMessage = QErrorMessage()
+            print(e)
             self.QErrorMessage.showMessage(str(e))
